@@ -12,7 +12,7 @@ from pathlib import Path
 SUPPORTED_FILE_EXTENSIONS = frozenset({".xlsx", ".xls", ".csv", ".xlsm", ".xlsb", ".ods"})
 
 
-def validate(file_path_str):
+def validate_file_path(file_path_str: str | None):
     if file_path_str is None or file_path_str == "":
         raise ValueError("No file path was supplied. Please supply a full path")
 
@@ -22,3 +22,8 @@ def validate(file_path_str):
 
     if file_path.suffix not in SUPPORTED_FILE_EXTENSIONS:
         raise ValueError("Supplied file type is not supported")
+
+
+def validate_dates_range(dates_range_str: str | None):
+    if not dates_range_str:
+        raise ValueError("No dates range was supplied. Enter a valid dates range")

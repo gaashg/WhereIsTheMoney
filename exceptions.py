@@ -12,3 +12,8 @@
 
 class ConfigError(Exception):
     """Raised when a requested configuration value is missing."""
+
+
+class FatalError(Exception):
+    """Raised when the execution of the application must be stopped."""
+

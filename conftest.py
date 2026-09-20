@@ -6,3 +6,5 @@
 # (at your option) any later version. See <https://www.gnu.org/licenses/>.
 #
 # Additional terms under Section 7(b): see the NOTICE file.
+
+"""Makes pytest add the project root to sys.path, so tests can import utils."""

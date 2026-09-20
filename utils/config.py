@@ -1,4 +1,4 @@
-# <שם הפרויקט> — Copyright (C) 2026 <השם שלך>
+# WhereIsTheMoney — Copyright (C) 2026 GaashG
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published
@@ -7,43 +7,55 @@
 #
 # Additional terms under Section 7(b): see the NOTICE file.
 
-"""Module docstring goes here."""
+"""Read-only access to the project's config.toml.
 
-import tomllib
-from pathlib import Path
+The file is read once, on first use, and cached. Its location defaults to
+config.toml in the project root; set WITM_CONFIG_PATH to read another file.
+"""
+
 import logging
-
+import os
+import tomllib
+from functools import cache
+from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_CONFIG_PATH = Path(__file__).resolve().parent.parent / "config.toml"
+CONFIG_PATH_ENV_VAR = "WITM_CONFIG_PATH"
 
-def _load_toml():
-    config_path = Path(__file__).resolve().parent.parent / "config.toml"
 
+def _config_path() -> Path:
+    """The configured file, overridable with the WITM_CONFIG_PATH variable."""
+    override = os.environ.get(CONFIG_PATH_ENV_VAR)
+    return Path(override) if override else DEFAULT_CONFIG_PATH
+
+
+@cache
+def _load_toml() -> dict:
+    """Read the config file. The result is cached, so it is read once."""
+    config_path = _config_path()
+    logger.debug("Loading configuration from %s", config_path)
     with config_path.open("rb") as f:
         return tomllib.load(f)
 
 
-_config = _load_toml()
+def get_value(key: str, section: str | None = None) -> Any:
+    if not key:
+        raise ValueError("No key was sent")
 
+    config = _load_toml()
 
-def get_value(section: str, key: str):
-    if key is None or key == "":
-        logger.error("No key was sent")
-        return None
+    if not section:
+        logger.debug("No section was supplied. Checking for top level key %s", key)
+        if key not in config:
+            raise KeyError(f"Key {key} was not found in config")
 
-    if section is None or section == "":
-        logger.info("Section is None. Checking for high level key")
-        if key not in _config:
-            logger.error("Key %s was not found in config", key)
-            return None
-        else:
-            return _config[key]
+        return config[key]
 
-    value = _config.get(section, {}).get(key)
+    value = config.get(section, {}).get(key)
     if value is None:
-        logger.error("Key %s.%s was not found in config", section, key)
+        raise KeyError(f"Key {section}.{key} was not found in config")
 
     return value
-
-

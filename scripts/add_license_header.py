@@ -1,3 +1,12 @@
+# WhereIsTheMoney — Copyright (C) 2026 GaashG
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version. See <https://www.gnu.org/licenses/>.
+#
+# Additional terms under Section 7(b): see the NOTICE file.
+
 """Insert the project's AGPL license header into Python source files.
 
 With no arguments, processes the files staged for commit and re-stages the ones
@@ -21,8 +30,10 @@ HEADER = (
     "# Additional terms under Section 7(b): see the NOTICE file.\n"
 )
 
-# A file already containing this text is considered to have the header.
-MARKER = "GNU Affero General Public License"
+# Only the exact header counts as present. A stale or templated one (for example
+# a PyCharm template still holding its placeholders) is recognised by this phrase
+# and replaced, so a wrong name cannot slip through.
+LICENSE_PHRASE = "General Public License"
 
 # PEP 263 encoding declaration, allowed only on the first two lines.
 ENCODING_DECLARATION = re.compile(r"^[ \t\f]*#.*?coding[:=][ \t]*[-_.a-zA-Z0-9]+")
@@ -43,14 +54,32 @@ def staged_python_files() -> list[Path]:
 
 
 def tracked_python_files() -> list[Path]:
-    return _paths_from(_git("ls-files", "-z", "--", "*.py"))
+    """Tracked files, plus new ones that are not ignored by .gitignore."""
+    return _paths_from(
+        _git("ls-files", "-z", "--cached", "--others", "--exclude-standard", "--", "*.py")
+    )
+
+
+def _drop_stale_header(lines: list[str], start: int) -> list[str]:
+    """Remove a leading comment block that is a license header, plus blank lines."""
+    end = start
+    while end < len(lines) and lines[end].lstrip().startswith("#"):
+        end += 1
+    if not any(LICENSE_PHRASE in line for line in lines[start:end]):
+        return lines
+
+    while end < len(lines) and not lines[end].strip():
+        end += 1
+    return lines[:start] + lines[end:]
 
 
 def add_header(path: Path) -> bool:
     """Add the header to path, keeping any shebang first. True if it changed."""
     # newline="" keeps the file's own line endings instead of translating them.
     text = path.read_text(encoding="utf-8", newline="")
-    if MARKER in text:
+    newline = "\r\n" if "\r\n" in text else "\n"
+    header = HEADER.replace("\n", newline)
+    if header in text:
         return False
 
     lines = text.splitlines(keepends=True)
@@ -60,9 +89,7 @@ def add_header(path: Path) -> bool:
     if len(lines) > insert_at and ENCODING_DECLARATION.match(lines[insert_at]):
         insert_at += 1
 
-    newline = "\r\n" if "\r\n" in text else "\n"
-    header = HEADER.replace("\n", newline)
-
+    lines = _drop_stale_header(lines, insert_at)
     rest = "".join(lines[insert_at:])
     if rest.strip() and not rest.startswith(newline):
         rest = newline + rest

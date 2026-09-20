@@ -6,19 +6,20 @@
 # (at your option) any later version. See <https://www.gnu.org/licenses/>.
 #
 # Additional terms under Section 7(b): see the NOTICE file.
-
-from validators import console_input_validator
 import logging
 from collections.abc import Callable
-from input import console_input
+
+from parsers import categories_file_parser
 
 logger = logging.getLogger(__name__)
 
 
 def learn(input_supplier: Callable[[], tuple[str, list[int]]]):
     try:
-        # validate the file path
-        console_input_validator.validate_file_path()
+        # get and validate the input: the path to the input file and the months range
+        file_path, months_range = input_supplier()
+        categories_file_parser.parse_categories_file(file_path, months_range)
+
 
 
     except (FileNotFoundError, ValueError) as ex:

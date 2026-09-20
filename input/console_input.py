@@ -39,14 +39,14 @@ def get_file_path_input(max_attempts: int) -> str | None:
         raise ValueError(f"max_attempts must be at least 1, got {max_attempts}")
 
     for attempt in range(max_attempts):
-        file_path = input("Hello, which file would you like me to learn today? Write a "
-                          f"full path ({max_attempts - attempt} attempts are left")
+        file_path = input("Hello, which file would you like me to learn today Write a "
+                          f"full path ({max_attempts - attempt} attempts are left)? ")
         try:
             console_input_validator.validate_file_path(file_path)
             return file_path
         except (ValueError, FileNotFoundError) as ex:
             if attempt < max_attempts - 1:
-                print("That didn't go very well... Enter a valid file path (failure"
+                print("That didn't go very well... Enter a valid file path (failure "
                       f"reason: {ex}")
                 logger.warning(
                     f"Failed to validate file: attempt={attempt}, reason={ex}")
@@ -96,7 +96,7 @@ def get_months_range(max_attempts: int) -> list[int] | None:
 
     for attempt in range(max_attempts):
         months_range = input("Great!! Now, tell me which months to learn (format options"
-                             ": [all | 3 | 5, 6 | 4-6]")
+                             ": [all | 3 | 5, 6 | 4-6]): ")
         try:
             console_input_validator.validate_dates_range(months_range)
             return format_months_range(months_range)

@@ -7,15 +7,17 @@
 #
 # Additional terms under Section 7(b): see the NOTICE file.
 
-import utils.logging_config as logging_config
-from input import console_input
-from services import categories_learner
+from file_readers import xlsx_file_reader
+from utils import config
 
 
-def main():
-    categories_learner.learn(console_input.supply_input)
+def parse_categories_file(file_path: str, months_range: list[int]) -> dict:
+    categories = xlsx_file_reader.read_file(file_path)
 
+    if not categories:
+        return {}
 
-if __name__ == "__main__":
-    logging_config.setup_logger()
-    main()
+    for row in categories:
+        print(row)
+
+    return {}

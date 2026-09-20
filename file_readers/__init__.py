@@ -6,16 +6,3 @@
 # (at your option) any later version. See <https://www.gnu.org/licenses/>.
 #
 # Additional terms under Section 7(b): see the NOTICE file.
-
-import utils.logging_config as logging_config
-from input import console_input
-from services import categories_learner
-
-
-def main():
-    categories_learner.learn(console_input.supply_input)
-
-
-if __name__ == "__main__":
-    logging_config.setup_logger()
-    main()

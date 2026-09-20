@@ -1,2 +1,5 @@
 [console_input]
 max_attempts = 3
+
+[categories_table_structure]
+columns_names = ["תאריך רכישה", "שם בית עסק", "סכום עסקה"]

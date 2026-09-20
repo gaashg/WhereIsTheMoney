@@ -17,6 +17,7 @@ import tomllib
 
 import pytest
 
+from exceptions import ConfigError
 from utils import config
 
 SAMPLE = """
@@ -78,7 +79,7 @@ def test_returns_falsy_values(write_config, key, expected):
 
 def test_empty_section_is_read_as_a_section(write_config):
     write_config()
-    with pytest.raises(config.ConfigError):
+    with pytest.raises(ConfigError):
         config.get_value("anything", "empty_section")
 
 
@@ -125,32 +126,32 @@ def test_missing_key_argument_raises_value_error(write_config, key):
 
 def test_unknown_top_level_key_raises_config_error(write_config):
     write_config()
-    with pytest.raises(config.ConfigError):
+    with pytest.raises(ConfigError):
         config.get_value("no_such_key")
 
 
 def test_unknown_key_in_section_raises_config_error(write_config):
     write_config()
-    with pytest.raises(config.ConfigError):
+    with pytest.raises(ConfigError):
         config.get_value("no_such_key", "console_input")
 
 
 def test_unknown_section_raises_config_error(write_config):
     write_config()
-    with pytest.raises(config.ConfigError):
+    with pytest.raises(ConfigError):
         config.get_value("max_attempts", "no_such_section")
 
 
 def test_section_key_lookup_does_not_fall_back_to_top_level(write_config):
     """log_level exists at the top level, but not inside console_input."""
     write_config()
-    with pytest.raises(config.ConfigError):
+    with pytest.raises(ConfigError):
         config.get_value("log_level", "console_input")
 
 
 def test_error_message_names_the_missing_key(write_config):
     write_config()
-    with pytest.raises(config.ConfigError, match="console_input.no_such_key"):
+    with pytest.raises(ConfigError, match="console_input.no_such_key"):
         config.get_value("no_such_key", "console_input")
 
 

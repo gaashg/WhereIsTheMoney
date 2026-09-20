@@ -20,15 +20,13 @@ from functools import cache
 from pathlib import Path
 from typing import Any
 
+from exceptions import ConfigError
+
 logger = logging.getLogger(__name__)
 
 DEFAULT_CONFIG_PATH = Path(__file__).resolve().parent.parent / "config.toml"
 CONFIG_PATH_ENV_VAR = "WITM_CONFIG_PATH"
 _MISSING = object()
-
-
-class ConfigError(Exception):
-    """Raised when a requested configuration value is missing."""
 
 
 def _config_path() -> Path:

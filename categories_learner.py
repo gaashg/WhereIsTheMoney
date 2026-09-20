@@ -8,11 +8,11 @@
 # Additional terms under Section 7(b): see the NOTICE file.
 
 import utils.logging_config as logging_config
-from services import learn_service
+from services import categories_learner
 
 
 def main():
-    learn_service.learn()
+    categories_learner.learn()
 
 
 

@@ -43,8 +43,6 @@ def read_file(file_path: str) -> list[dict] | None:
                     # data rows, header excluded
                     usecols=f"{get_column_letter(min_col)}:{get_column_letter(max_col)}",
                 )
-                for row in df.itertuples(index=False):
-                    print(row.Date, row.Amount)
                 return df.to_dict("records")
             else:
                 failures[table.ref] = wanted - {c.name for c in table.tableColumns}

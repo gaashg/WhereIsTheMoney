@@ -24,6 +24,11 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_CONFIG_PATH = Path(__file__).resolve().parent.parent / "config.toml"
 CONFIG_PATH_ENV_VAR = "WITM_CONFIG_PATH"
+_MISSING = object()
+
+
+class ConfigError(Exception):
+    """Raised when a requested configuration value is missing."""
 
 
 def _config_path() -> Path:
@@ -41,21 +46,18 @@ def _load_toml() -> dict:
         return tomllib.load(f)
 
 
-def get_value(key: str, section: str | None = None) -> Any:
+def get_value(key: str, section: str | None = None, default: Any = _MISSING) -> Any:
     if not key:
         raise ValueError("No key was sent")
 
     config = _load_toml()
+    container = config if not section else config.get(section, {})
 
-    if not section:
-        logger.debug("No section was supplied. Checking for top level key %s", key)
-        if key not in config:
-            raise KeyError(f"Key {key} was not found in config")
-
-        return config[key]
-
-    value = config.get(section, {}).get(key)
-    if value is None:
-        raise KeyError(f"Key {section}.{key} was not found in config")
+    value = container.get(key, _MISSING)
+    if value is _MISSING:
+        if default is _MISSING:
+            full_key = key if not section else f"{section}.{key}"
+            raise ConfigError(f"Key {full_key} was not found in config")
+        return default
 
     return value

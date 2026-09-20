@@ -78,7 +78,7 @@ def test_returns_falsy_values(write_config, key, expected):
 
 def test_empty_section_is_read_as_a_section(write_config):
     write_config()
-    with pytest.raises(KeyError):
+    with pytest.raises(config.ConfigError):
         config.get_value("anything", "empty_section")
 
 
@@ -97,6 +97,22 @@ def test_env_variable_overrides_the_default_path(write_config, monkeypatch):
     assert config._config_path() == config.DEFAULT_CONFIG_PATH
 
 
+def test_default_is_returned_when_the_key_is_missing(write_config):
+    write_config()
+    assert config.get_value("no_such_key", "console_input", default=7) == 7
+
+
+def test_default_of_none_is_honoured(write_config):
+    """None is a legal default, and must not be mistaken for "no default"."""
+    write_config()
+    assert config.get_value("no_such_key", default=None) is None
+
+
+def test_default_is_ignored_when_the_key_exists(write_config):
+    write_config()
+    assert config.get_value("max_attempts", "console_input", default=7) == 3
+
+
 # --- negative cases ---------------------------------------------------------
 
 
@@ -107,34 +123,34 @@ def test_missing_key_argument_raises_value_error(write_config, key):
         config.get_value(key)
 
 
-def test_unknown_top_level_key_raises_key_error(write_config):
+def test_unknown_top_level_key_raises_config_error(write_config):
     write_config()
-    with pytest.raises(KeyError):
+    with pytest.raises(config.ConfigError):
         config.get_value("no_such_key")
 
 
-def test_unknown_key_in_section_raises_key_error(write_config):
+def test_unknown_key_in_section_raises_config_error(write_config):
     write_config()
-    with pytest.raises(KeyError):
+    with pytest.raises(config.ConfigError):
         config.get_value("no_such_key", "console_input")
 
 
-def test_unknown_section_raises_key_error(write_config):
+def test_unknown_section_raises_config_error(write_config):
     write_config()
-    with pytest.raises(KeyError):
+    with pytest.raises(config.ConfigError):
         config.get_value("max_attempts", "no_such_section")
 
 
 def test_section_key_lookup_does_not_fall_back_to_top_level(write_config):
     """log_level exists at the top level, but not inside console_input."""
     write_config()
-    with pytest.raises(KeyError):
+    with pytest.raises(config.ConfigError):
         config.get_value("log_level", "console_input")
 
 
 def test_error_message_names_the_missing_key(write_config):
     write_config()
-    with pytest.raises(KeyError, match="console_input.no_such_key"):
+    with pytest.raises(config.ConfigError, match="console_input.no_such_key"):
         config.get_value("no_such_key", "console_input")
 
 

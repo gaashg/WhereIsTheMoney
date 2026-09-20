@@ -1,0 +1,9 @@
+from enum import Enum
+
+  class SupportedFileTypes(Enum):
+      XLSX = ".xlsx"
+      XLS = ".xls"
+      CSV = ".csv"
+      XLSM = ".xlsm"
+      XLSB = ".xlsb"
+      ODS = ".ods"

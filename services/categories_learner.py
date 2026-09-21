@@ -19,9 +19,12 @@ def learn(input_supplier: Callable[[], tuple[str, list[int]]]):
     try:
         # get and validate the input: the path to the input file and the months range
         file_path, months_range = input_supplier()
+        logger.info("Going to get the categories from the expenses file(s)")
         new_categories = categories_file_parser.parse_categories_file(file_path, months_range)
+        logger.info("Going to get the previously used categories")
         existing_categories = categories_file_parser.parse_existing_categories()
         merged_categories = (new_categories or {}) | (existing_categories or {})
+        logger.info("The categories are merged, going to write them into categories file")
         categories_file_writer.write_categories_file(merged_categories)
 
     except (FileNotFoundError, ValueError) as ex:

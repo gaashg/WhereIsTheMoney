@@ -10,6 +10,7 @@ import logging
 from collections.abc import Callable
 
 from parsers import categories_file_parser
+from utils import categories_file_writer
 
 logger = logging.getLogger(__name__)
 
@@ -18,9 +19,10 @@ def learn(input_supplier: Callable[[], tuple[str, list[int]]]):
     try:
         # get and validate the input: the path to the input file and the months range
         file_path, months_range = input_supplier()
-        categories_file_parser.parse_categories_file(file_path, months_range)
-
-
+        new_categories = categories_file_parser.parse_categories_file(file_path, months_range)
+        existing_categories = categories_file_parser.parse_existing_categories()
+        merged_categories = (new_categories or {}) | (existing_categories or {})
+        categories_file_writer.write_categories_file(merged_categories)
 
     except (FileNotFoundError, ValueError) as ex:
         logger.exception("A failure happened during input file validation %s", file_path)

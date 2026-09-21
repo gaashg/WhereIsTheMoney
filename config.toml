@@ -3,3 +3,11 @@ max_attempts = 3
 
 [categories_table_structure]
 columns_names = ["תאריך רכישה", "שם בית עסק", "סכום עסקה"]
+column_names_renaming = {"תאריך רכישה" = 'purchase_date', "שם בית עסק" = "shop", "סכום עסקה" = "purchase_amount", "סכום חיוב" = "billing_amount", "תחום 1" = "category1", "תחום 2" = "category2", "תחום 3" = "category3"}
+
+[categories]
+existing_categories_folder = "D:\\Users\\gaash\\budget\\"
+existing_categories_file_name = "existingCategories.json"
+
+[logging]
+folder = "D:\\Users\\gaash\\budget\\logs"

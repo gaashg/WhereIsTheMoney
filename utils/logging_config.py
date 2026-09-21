@@ -9,11 +9,17 @@
 
 import logging
 from logging.handlers import RotatingFileHandler
+from pathlib import Path
+
+from utils import config
 
 
 def setup_logger():
-    handler = RotatingFileHandler("reports_parser.log", maxBytes=5_000_000, backupCount=3,
-                                  encoding="utf-8")
+    log_folder = Path(config.get_value("folder", "logging"))
+    # The handler opens the file but does not create its folder.
+    log_folder.mkdir(parents=True, exist_ok=True)
+    handler = RotatingFileHandler(log_folder / "reports_parser.log", maxBytes=5_000_000,
+                                  backupCount=3, encoding="utf-8")
     handler.setFormatter(
         logging.Formatter("%(asctime)s %(levelname)s %(name)s:%(lineno)d: %(message)s"))
     logging.basicConfig(level=logging.INFO, handlers=[handler])

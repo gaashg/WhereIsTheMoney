@@ -16,6 +16,9 @@ class Expense:
     """A class that describes a purchase that was made"""
     purchase_date: datetime
     shop: str
-    category1: str
-    category2: str
-    category3: str
+    category1: str | None
+    category2: str | None
+    category3: str | None
+    purchase_amount: float | None = None
+    billing_amount: float | None = None
+    extra_detail: str | None = None

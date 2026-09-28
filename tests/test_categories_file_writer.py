@@ -21,7 +21,8 @@ import pytest
 
 from exceptions import ConfigError
 from file_readers import categories_file_reader
-from utils import categories_file_writer, config
+from utils import config
+from writers import categories_file_writer
 
 FILE_NAME = "existingCategories.json"
 CATEGORIES = {"NETFLIX": ["תקשורת", "טלוויזיה"], "SUPER": ["מזון", "category conflict"]}

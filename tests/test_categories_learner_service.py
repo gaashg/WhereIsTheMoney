@@ -22,7 +22,7 @@ import pytest
 from exceptions import ConfigError, FatalError
 from parsers import categories_file_parser
 from services import categories_learner
-from utils import categories_file_writer
+from writers import categories_file_writer
 
 FILE_PATH = "D:\\budget\\2024-11.xlsx"
 MONTHS = [10, 11]
@@ -39,11 +39,12 @@ def world(monkeypatch):
     results = {"new": {}, "existing": {}}
 
     def fake_parse(file_path, months_range):
+        """The parser hands over the file's expenses and the categories in them."""
         calls["parsed"].append((file_path, months_range))
         outcome = results["new"]
         if isinstance(outcome, Exception):
             raise outcome
-        return outcome
+        return results.get("expenses", []), outcome
 
     def fake_existing():
         outcome = results["existing"]
@@ -57,7 +58,7 @@ def world(monkeypatch):
         if isinstance(outcome, Exception):
             raise outcome
 
-    monkeypatch.setattr(categories_file_parser, "parse_categories_file", fake_parse)
+    monkeypatch.setattr(categories_file_parser, "parse_expenses_file", fake_parse)
     monkeypatch.setattr(categories_file_parser, "parse_existing_categories", fake_existing)
     monkeypatch.setattr(categories_file_writer, "write_categories_file", fake_write)
     return calls, results

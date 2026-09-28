@@ -6,7 +6,3 @@
 # (at your option) any later version. See <https://www.gnu.org/licenses/>.
 #
 # Additional terms under Section 7(b): see the NOTICE file.
-
-from .parser import parse_file
-
-__all__ = ["parse_file"]

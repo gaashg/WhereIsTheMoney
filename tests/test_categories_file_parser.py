@@ -42,14 +42,16 @@ def read(monkeypatch):
             paths.append(file_path)
             return result
 
-        monkeypatch.setattr(xlsx_file_reader, "read_file", fake_read_file)
+        monkeypatch.setattr(xlsx_file_reader, "read_expenses_file", fake_read_file)
         return paths
 
     return hand_over
 
 
 def parse():
-    return categories_file_parser.parse_categories_file("expenses.xlsx", MONTHS)
+    """The categories of the file; the expenses beside them have their own tests."""
+    _, categories = categories_file_parser.parse_expenses_file("expenses.xlsx", MONTHS)
+    return categories
 
 
 def conflict_messages(caplog) -> list[str]:
@@ -272,10 +274,46 @@ def test_reader_errors_are_not_swallowed(monkeypatch):
     def failing_read_file(file_path):
         raise FileNotFoundError(file_path)
 
-    monkeypatch.setattr(xlsx_file_reader, "read_file", failing_read_file)
+    monkeypatch.setattr(xlsx_file_reader, "read_expenses_file", failing_read_file)
 
     with pytest.raises(FileNotFoundError):
         parse()
+
+
+# --- the expenses that come along with the categories ------------------------
+
+
+def test_the_expenses_of_the_file_are_returned_beside_the_categories(read):
+    expenses = [expense("SUPER", "מזון"), expense("NETFLIX", "תקשורת")]
+    read(expenses)
+
+    read_expenses, categories = categories_file_parser.parse_expenses_file(
+        "expenses.xlsx", MONTHS)
+
+    assert read_expenses == expenses
+    assert categories == {"SUPER": ["מזון"], "NETFLIX": ["תקשורת"]}
+
+
+def test_the_expenses_are_handed_over_untouched(read):
+    """Their categories are filled in later, by the analyzer."""
+    read([expense("SUPER", "מזון", "מכולת")])
+
+    read_expenses, _ = categories_file_parser.parse_expenses_file("expenses.xlsx", MONTHS)
+
+    assert [levels for levels in ([read_expenses[0].category1, read_expenses[0].category2,
+                                   read_expenses[0].category3],)] == [["מזון", "מכולת", None]]
+
+
+def test_no_suitable_table_gives_no_expenses_either(read):
+    read(None)
+
+    assert categories_file_parser.parse_expenses_file("expenses.xlsx", MONTHS) == (None, None)
+
+
+def test_an_empty_file_gives_no_expenses_and_no_categories(read):
+    read([])
+
+    assert categories_file_parser.parse_expenses_file("expenses.xlsx", MONTHS) == ([], {})
 
 
 # --- parse_existing_categories ----------------------------------------------

@@ -28,13 +28,13 @@ MONTHS_RANGE = re.compile(rf"\s*{_MONTH}\s*-\s*{_MONTH}\s*")
 
 def supply_input() -> tuple:
     max_attempts = config.get_value("max_attempts", "console_input")
-    file_path = get_file_path_input(max_attempts)
-    months_range = get_months_range(max_attempts)
+    file_path = _get_file_path_input(max_attempts)
+    months_range = _get_months_range(max_attempts)
 
     return file_path, months_range
 
 
-def get_file_path_input(max_attempts: int) -> str | None:
+def _get_file_path_input(max_attempts: int) -> str | None:
     if max_attempts < 1:
         raise ValueError(f"max_attempts must be at least 1, got {max_attempts}")
 
@@ -57,7 +57,7 @@ def get_file_path_input(max_attempts: int) -> str | None:
     return None
 
 
-def format_months_range(months_range: str) -> list[int]:
+def _format_months_range(months_range: str) -> list[int]:
     """Turn "all", "3", "5, 6" or "4-6" into the months they stand for."""
     months_range = months_range.strip()
     if months_range.lower() == ALL_MONTHS:
@@ -90,7 +90,7 @@ def _to_months(*months: str) -> list[int]:
     return numbers
 
 
-def get_months_range(max_attempts: int) -> list[int] | None:
+def _get_months_range(max_attempts: int) -> list[int] | None:
     if max_attempts < 1:
         raise ValueError(f"max_attempts must be at least 1, got {max_attempts}")
 
@@ -99,7 +99,7 @@ def get_months_range(max_attempts: int) -> list[int] | None:
                              ": [all | 3 | 5, 6 | 4-6]): ")
         try:
             console_input_validator.validate_dates_range(months_range)
-            return format_months_range(months_range)
+            return _format_months_range(months_range)
         except (ValueError, FileNotFoundError) as ex:
             if attempt < max_attempts - 1:
                 print("That didn't go very well... Enter a valid dates range (failure"

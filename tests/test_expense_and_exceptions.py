@@ -11,6 +11,7 @@
 
 from dataclasses import fields
 from datetime import datetime
+from typing import Any
 
 import pytest
 
@@ -19,8 +20,8 @@ from models.expense import Expense
 
 
 def an_expense(**changes) -> Expense:
-    values = dict(purchase_date=datetime(2024, 10, 9), shop="NETFLIX",
-                  category1="תקשורת", category2="טלוויזיה", category3=None)
+    values: dict[str, Any] = dict(purchase_date=datetime(2024, 10, 9), shop="NETFLIX",
+                                  category1="תקשורת", category2="טלוויזיה", category3=None)
     values.update(changes)
     return Expense(**values)
 
@@ -31,7 +32,14 @@ def an_expense(**changes) -> Expense:
 def test_the_fields_and_their_order():
     """xlsx_file_reader takes its columns from these fields, in this order."""
     assert [field.name for field in fields(Expense)] == [
-        "purchase_date", "shop", "category1", "category2", "category3"]
+        "purchase_date", "shop", "category1", "category2", "category3",
+        "purchase_amount", "billing_amount", "extra_detail"]
+
+
+@pytest.mark.parametrize("field_name", ["purchase_amount", "billing_amount", "extra_detail"])
+def test_the_fields_the_writer_adds_are_optional(field_name):
+    """The parsers build an Expense without them, only the writer needs them."""
+    assert getattr(an_expense(), field_name) is None
 
 
 def test_expenses_with_the_same_values_are_equal():

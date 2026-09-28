@@ -30,7 +30,7 @@ from utils import config
 CONFIG = """
 [categories_table_structure]
 columns_names = ["תאריך רכישה", "שם בית עסק", "סכום עסקה"]
-column_names_renaming = {"תאריך רכישה" = "purchase_date", "שם בית עסק" = "shop", "סכום עסקה" = "purchase_amount", "סכום חיוב" = "billing_amount", "תחום 1" = "category1", "תחום 2" = "category2", "תחום 3" = "category3"}
+column_names_renaming = {"תאריך רכישה" = "purchase_date", "שם בית עסק" = "shop", "סכום עסקה" = "purchase_amount", "סכום חיוב" = "billing_amount", "פירוט נוסף" = "extra_detail", "תחום 1" = "category1", "תחום 2" = "category2", "תחום 3" = "category3"}
 """
 
 HEADERS = ["תאריך רכישה", "שם בית עסק", "סכום עסקה", "סכום חיוב", "פירוט נוסף",
@@ -96,15 +96,27 @@ def test_rows_become_expenses(one_table):
     path = one_table(purchase(datetime(2024, 10, 9), "NETFLIX", category1="תקשורת",
                               category2="טלוויזיה", category3="נטפליקס"))
 
-    assert xlsx_file_reader.read_file(path) == [
+    assert xlsx_file_reader.read_expenses_file(path) == [
         Expense(purchase_date=datetime(2024, 10, 9), shop="NETFLIX",
-                category1="תקשורת", category2="טלוויזיה", category3="נטפליקס")]
+                category1="תקשורת", category2="טלוויזיה", category3="נטפליקס",
+                purchase_amount=10.0, billing_amount=10.0, extra_detail=None)]
+
+
+def test_the_amounts_and_the_detail_are_read(one_table):
+    """The writer needs them for the main table of the budget file."""
+    path = one_table(purchase(datetime(2024, 10, 9), amount=37.41, billing=12.47,
+                              note="תשלום 1 מתוך 3"))
+
+    expense = xlsx_file_reader.read_expenses_file(path)[0]
+
+    assert (expense.purchase_amount, expense.billing_amount,
+            expense.extra_detail) == (37.41, 12.47, "תשלום 1 מתוך 3")
 
 
 def test_empty_categories_become_none(one_table):
     path = one_table(purchase(datetime(2024, 10, 9), category2=None, category3=None))
 
-    expense = xlsx_file_reader.read_file(path)[0]
+    expense = xlsx_file_reader.read_expenses_file(path)[0]
     assert expense.category2 is None
     assert expense.category3 is None
 
@@ -114,7 +126,7 @@ def test_rows_keep_their_order(one_table):
                      purchase(datetime(2024, 10, 1), "B"),
                      purchase(datetime(2024, 10, 2), "C"))
 
-    assert [e.shop for e in xlsx_file_reader.read_file(path)] == ["A", "B", "C"]
+    assert [e.shop for e in xlsx_file_reader.read_expenses_file(path)] == ["A", "B", "C"]
 
 
 def test_identical_rows_are_all_kept(one_table):
@@ -122,7 +134,7 @@ def test_identical_rows_are_all_kept(one_table):
     same = purchase(datetime(2024, 10, 9), "SUPER")
     path = one_table(same, same, same)
 
-    assert len(xlsx_file_reader.read_file(path)) == 3
+    assert len(xlsx_file_reader.read_expenses_file(path)) == 3
 
 
 def test_table_away_from_the_corner(save):
@@ -133,7 +145,7 @@ def test_table_away_from_the_corner(save):
     worksheet["A2"] = 12345
     add_table(worksheet, [purchase(datetime(2024, 10, 9), "SHOP")], row=6, column=3)
 
-    assert [e.shop for e in xlsx_file_reader.read_file(save(workbook))] == ["SHOP"]
+    assert [e.shop for e in xlsx_file_reader.read_expenses_file(save(workbook))] == ["SHOP"]
 
 
 def test_table_is_found_on_any_sheet_among_other_tables(save):
@@ -147,7 +159,7 @@ def test_table_is_found_on_any_sheet_among_other_tables(save):
     add_table(worksheet, [purchase(datetime(2024, 10, 9), "SHOP")], row=5,
               name="Purchases")
 
-    assert [e.shop for e in xlsx_file_reader.read_file(save(workbook))] == ["SHOP"]
+    assert [e.shop for e in xlsx_file_reader.read_expenses_file(save(workbook))] == ["SHOP"]
 
 
 def test_only_the_first_matching_table_is_read(save):
@@ -157,7 +169,7 @@ def test_only_the_first_matching_table_is_read(save):
     add_table(workbook.create_sheet("second"),
               [purchase(datetime(2024, 10, 9), "SECOND")], name="T2")
 
-    assert [e.shop for e in xlsx_file_reader.read_file(save(workbook))] == ["FIRST"]
+    assert [e.shop for e in xlsx_file_reader.read_expenses_file(save(workbook))] == ["FIRST"]
 
 
 # --- positive cases: dates --------------------------------------------------
@@ -167,14 +179,14 @@ def test_text_dates_are_read_day_first(one_table):
     """09/10/2024 is the 9th of October, not the 10th of September."""
     path = one_table(purchase("09/10/2024"))
 
-    assert xlsx_file_reader.read_file(path)[0].purchase_date == datetime(2024, 10, 9)
+    assert xlsx_file_reader.read_expenses_file(path)[0].purchase_date == datetime(2024, 10, 9)
 
 
 def test_serial_numbers_are_read_as_excel_dates(one_table):
     """Excel counts days from 1899-12-30: 45606 is 2024-11-10."""
     path = one_table(purchase(45606))
 
-    assert xlsx_file_reader.read_file(path)[0].purchase_date == datetime(2024, 11, 10)
+    assert xlsx_file_reader.read_expenses_file(path)[0].purchase_date == datetime(2024, 11, 10)
 
 
 def test_mixed_date_shapes_in_one_column(one_table):
@@ -182,7 +194,7 @@ def test_mixed_date_shapes_in_one_column(one_table):
                      purchase("18/10/2024"),
                      purchase(45587))
 
-    dates = [e.purchase_date for e in xlsx_file_reader.read_file(path)]
+    dates = [e.purchase_date for e in xlsx_file_reader.read_expenses_file(path)]
     assert dates == [datetime(2024, 10, 2), datetime(2024, 10, 18), datetime(2024, 10, 22)]
 
 
@@ -193,20 +205,20 @@ def test_missing_date_gets_the_first_of_the_most_common_month(one_table):
                      purchase(datetime(2024, 10, 20)),
                      purchase(None, "CASH"))
 
-    assert xlsx_file_reader.read_file(path)[-1].purchase_date == datetime(2024, 10, 1)
+    assert xlsx_file_reader.read_expenses_file(path)[-1].purchase_date == datetime(2024, 10, 1)
 
 
 def test_unreadable_date_is_treated_like_a_missing_one(one_table):
     path = one_table(purchase(datetime(2024, 10, 5)), purchase("not a date", "ODD"))
 
-    assert xlsx_file_reader.read_file(path)[-1].purchase_date == datetime(2024, 10, 1)
+    assert xlsx_file_reader.read_expenses_file(path)[-1].purchase_date == datetime(2024, 10, 1)
 
 
 def test_a_defaulted_date_is_logged(one_table, caplog):
     path = one_table(purchase(datetime(2024, 10, 5)), purchase(None, "CASH"))
 
     with caplog.at_level(logging.WARNING):
-        xlsx_file_reader.read_file(path)
+        xlsx_file_reader.read_expenses_file(path)
 
     assert "Entry 1 (CASH) has no purchase date, its date was set to 01/10/2024" \
         in caplog.text
@@ -216,7 +228,7 @@ def test_no_date_is_ever_left_empty(one_table):
     path = one_table(purchase(datetime(2024, 10, 5)), purchase(None),
                      purchase("garbage"), purchase(45606))
 
-    assert all(e.purchase_date is not None for e in xlsx_file_reader.read_file(path))
+    assert all(e.purchase_date is not None for e in xlsx_file_reader.read_expenses_file(path))
 
 
 # --- positive cases: rows that are not purchases ----------------------------
@@ -228,7 +240,7 @@ def test_totals_row_is_dropped(one_table):
                      purchase(None, shop=None, amount=None, billing=6023.15,
                               category1=None))
 
-    assert [e.shop for e in xlsx_file_reader.read_file(path)] == ["SHOP"]
+    assert [e.shop for e in xlsx_file_reader.read_expenses_file(path)] == ["SHOP"]
 
 
 def test_empty_row_is_dropped(one_table):
@@ -236,7 +248,7 @@ def test_empty_row_is_dropped(one_table):
                      purchase(None, shop=None, amount=None, billing=None,
                               category1=None))
 
-    assert [e.shop for e in xlsx_file_reader.read_file(path)] == ["SHOP"]
+    assert [e.shop for e in xlsx_file_reader.read_expenses_file(path)] == ["SHOP"]
 
 
 def test_a_dropped_row_is_logged(one_table, caplog):
@@ -245,7 +257,7 @@ def test_a_dropped_row_is_logged(one_table, caplog):
                               category1=None))
 
     with caplog.at_level(logging.WARNING):
-        xlsx_file_reader.read_file(path)
+        xlsx_file_reader.read_expenses_file(path)
 
     assert "Row 1 holds no purchase, dropping it" in caplog.text
     assert "6023.15" in caplog.text
@@ -257,7 +269,7 @@ def test_a_dropped_row_does_not_get_a_default_date(one_table, caplog):
                               category1=None))
 
     with caplog.at_level(logging.WARNING):
-        xlsx_file_reader.read_file(path)
+        xlsx_file_reader.read_expenses_file(path)
 
     assert "has no purchase date" not in caplog.text
 
@@ -274,7 +286,7 @@ def test_a_dropped_row_does_not_get_a_default_date(one_table, caplog):
 def test_a_row_with_any_purchase_detail_is_kept(one_table, row):
     path = one_table(purchase(datetime(2024, 10, 5), "SHOP"), row)
 
-    assert len(xlsx_file_reader.read_file(path)) == 2
+    assert len(xlsx_file_reader.read_expenses_file(path)) == 2
 
 
 def test_a_row_without_a_shop_is_kept_with_shop_none(one_table):
@@ -282,7 +294,7 @@ def test_a_row_without_a_shop_is_kept_with_shop_none(one_table):
     path = one_table(purchase(datetime(2024, 10, 5), "SHOP"),
                      purchase(datetime(2024, 10, 6), shop=None, amount=400.0))
 
-    assert xlsx_file_reader.read_file(path)[1].shop is None
+    assert xlsx_file_reader.read_expenses_file(path)[1].shop is None
 
 
 # --- negative cases ---------------------------------------------------------
@@ -293,7 +305,7 @@ def test_workbook_without_tables_returns_none(save, caplog):
     workbook.active["A1"] = "no tables here"
 
     with caplog.at_level(logging.ERROR):
-        assert xlsx_file_reader.read_file(save(workbook)) is None
+        assert xlsx_file_reader.read_expenses_file(save(workbook)) is None
 
     assert "No suitable table data was found" in caplog.text
 
@@ -305,7 +317,7 @@ def test_table_missing_a_needed_column_returns_none(save, caplog):
               headers=HEADERS[:-1])
 
     with caplog.at_level(logging.ERROR):
-        assert xlsx_file_reader.read_file(save(workbook)) is None
+        assert xlsx_file_reader.read_expenses_file(save(workbook)) is None
 
     assert "No suitable table data was found" in caplog.text
 
@@ -315,7 +327,7 @@ def test_the_error_names_the_missing_columns(save, caplog):
     add_table(workbook.active, [["salary", 100]], headers=["הכנסות", "סכום"])
 
     with caplog.at_level(logging.ERROR):
-        xlsx_file_reader.read_file(save(workbook))
+        xlsx_file_reader.read_expenses_file(save(workbook))
 
     assert "שם בית עסק" in caplog.text
 
@@ -324,7 +336,7 @@ def test_table_without_any_readable_date_raises(one_table):
     path = one_table(purchase(None, "A"), purchase("garbage", "B"))
 
     with pytest.raises(ValueError, match="No purchase date in the table could be read"):
-        xlsx_file_reader.read_file(path)
+        xlsx_file_reader.read_expenses_file(path)
 
 
 def test_table_with_only_a_header_raises(save):
@@ -336,12 +348,12 @@ def test_table_with_only_a_header_raises(save):
     worksheet.add_table(Table(displayName="Table1", ref="A1:H2"))
 
     with pytest.raises(ValueError):
-        xlsx_file_reader.read_file(save(workbook))
+        xlsx_file_reader.read_expenses_file(save(workbook))
 
 
 def test_missing_file_raises_file_not_found(tmp_path):
     with pytest.raises(FileNotFoundError):
-        xlsx_file_reader.read_file(str(tmp_path / "absent.xlsx"))
+        xlsx_file_reader.read_expenses_file(str(tmp_path / "absent.xlsx"))
 
 
 def test_file_that_is_not_really_xlsx_raises(tmp_path):
@@ -349,4 +361,4 @@ def test_file_that_is_not_really_xlsx_raises(tmp_path):
     fake.write_text("just text wearing an .xlsx suffix", encoding="utf-8")
 
     with pytest.raises(zipfile.BadZipFile):
-        xlsx_file_reader.read_file(str(fake))
+        xlsx_file_reader.read_expenses_file(str(fake))

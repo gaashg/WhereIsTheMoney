@@ -18,9 +18,9 @@ logger = logging.getLogger(__name__)
 CATEGORY_CONFLICT = "category conflict"
 
 
-def parse_categories_file(file_path: str, months_range: list[int]) -> dict | None:
-    expenses = xlsx_file_reader.read_file(file_path)
-    return None if expenses is None else _categories_by_shop(expenses)
+def parse_expenses_file(file_path: str, months_range: list[int]) -> tuple[list[Expense] | None, dict[str, list[str]] | None]:
+    expenses = xlsx_file_reader.read_expenses_file(file_path)
+    return expenses, None if expenses is None else _categories_by_shop(expenses)
 
 
 def _categories_by_shop(expenses: list[Expense]) -> dict[str, list[str]]:

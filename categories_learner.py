@@ -9,11 +9,22 @@
 
 import utils.logging_config as logging_config
 from input import console_input
-from services import categories_learner
+from services import categories_learner, categories_analyzer
 
 
 def main():
-    categories_learner.learn(console_input.supply_input)
+    while True:
+        choice = input("What would you like to do today?\n1 - Add new categories\n2 - "
+                       "Process payments\n3 - Exit")
+        match choice:
+            case "1":
+                categories_learner.learn(console_input.supply_input)
+            case "2":
+                categories_analyzer.categorize_expenses(console_input.supply_input)
+            case "3":
+                return
+            case _:
+                print("Invalid option (choose between 1, 2, 3")
 
 
 if __name__ == "__main__":

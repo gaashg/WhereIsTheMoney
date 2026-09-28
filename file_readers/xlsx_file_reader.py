@@ -26,7 +26,7 @@ FIELDS = [field.name for field in fields(Expense)]
 PURCHASE_COLUMNS = ["shop", "purchase_amount", "purchase_date"]
 
 
-def read_file(file_path: str) -> list[Expense] | None:
+def read_expenses_file(file_path: str) -> list[Expense] | None:
     wanted = set(config.get_value("columns_names", "categories_table_structure"))
     columns_renaming = config.get_value("column_names_renaming", "categories_table_structure")
 

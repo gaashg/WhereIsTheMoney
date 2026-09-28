@@ -51,7 +51,7 @@ def excel_file(tmp_path):
 
 @pytest.mark.parametrize("months_range", ["all", "ALL", "All", "  all  "])
 def test_all_returns_every_month(months_range):
-    assert console_input.format_months_range(months_range) == ALL_TWELVE
+    assert console_input._format_months_range(months_range) == ALL_TWELVE
 
 
 @pytest.mark.parametrize(
@@ -59,7 +59,7 @@ def test_all_returns_every_month(months_range):
     [("3", [3]), ("12", [12]), ("1", [1]), ("  7 ", [7])],
 )
 def test_single_month(months_range, expected):
-    assert console_input.format_months_range(months_range) == expected
+    assert console_input._format_months_range(months_range) == expected
 
 
 @pytest.mark.parametrize(
@@ -73,7 +73,7 @@ def test_single_month(months_range, expected):
     ],
 )
 def test_months_list(months_range, expected):
-    assert console_input.format_months_range(months_range) == expected
+    assert console_input._format_months_range(months_range) == expected
 
 
 @pytest.mark.parametrize(
@@ -86,12 +86,12 @@ def test_months_list(months_range, expected):
     ],
 )
 def test_months_range(months_range, expected):
-    assert console_input.format_months_range(months_range) == expected
+    assert console_input._format_months_range(months_range) == expected
 
 
 def test_every_result_is_a_list_of_ints():
     for months_range in ["all", "3", "5, 6", "4-6"]:
-        result = console_input.format_months_range(months_range)
+        result = console_input._format_months_range(months_range)
         assert all(isinstance(month, int) for month in result)
 
 
@@ -101,13 +101,13 @@ def test_every_result_is_a_list_of_ints():
 @pytest.mark.parametrize("months_range", ["0", "13", "99", "0-3", "10-13"])
 def test_month_out_of_range_is_rejected(months_range):
     with pytest.raises(ValueError, match="out of range"):
-        console_input.format_months_range(months_range)
+        console_input._format_months_range(months_range)
 
 
 @pytest.mark.parametrize("months_range", ["6-4", "12-1"])
 def test_backwards_range_is_rejected(months_range):
     with pytest.raises(ValueError, match="starts after it ends"):
-        console_input.format_months_range(months_range)
+        console_input._format_months_range(months_range)
 
 
 @pytest.mark.parametrize(
@@ -116,12 +116,12 @@ def test_backwards_range_is_rejected(months_range):
 )
 def test_unsupported_shapes_are_rejected(months_range):
     with pytest.raises(ValueError, match="Unsupported dates range"):
-        console_input.format_months_range(months_range)
+        console_input._format_months_range(months_range)
 
 
 def test_error_message_lists_the_supported_formats():
     with pytest.raises(ValueError, match=r"all \| 3 \| 5, 6 \| 4-6"):
-        console_input.format_months_range("nonsense")
+        console_input._format_months_range("nonsense")
 
 
 # --- get_file_path_input ----------------------------------------------------
@@ -129,32 +129,32 @@ def test_error_message_lists_the_supported_formats():
 
 def test_file_path_accepted_on_the_first_attempt(answers, excel_file):
     answers(excel_file)
-    assert console_input.get_file_path_input(3) == excel_file
+    assert console_input._get_file_path_input(3) == excel_file
 
 
 def test_file_path_accepted_after_bad_attempts(answers, excel_file):
     remaining = answers("", "notes.txt", excel_file)
-    assert console_input.get_file_path_input(3) == excel_file
+    assert console_input._get_file_path_input(3) == excel_file
     assert remaining == []
 
 
 def test_file_path_attempts_run_out(answers):
     answers("bad", "worse", "worst")
     with pytest.raises(FatalError, match="Maximum number of attempts"):
-        console_input.get_file_path_input(3)
+        console_input._get_file_path_input(3)
 
 
 def test_file_path_uses_no_more_attempts_than_allowed(answers, excel_file):
     """With one attempt left, a bad answer fails instead of asking again."""
     answers("bad")
     with pytest.raises(FatalError):
-        console_input.get_file_path_input(1)
+        console_input._get_file_path_input(1)
 
 
 @pytest.mark.parametrize("max_attempts", [0, -1])
 def test_file_path_rejects_a_non_positive_attempt_count(max_attempts):
     with pytest.raises(ValueError, match="at least 1"):
-        console_input.get_file_path_input(max_attempts)
+        console_input._get_file_path_input(max_attempts)
 
 
 # --- get_months_range -------------------------------------------------------
@@ -162,26 +162,26 @@ def test_file_path_rejects_a_non_positive_attempt_count(max_attempts):
 
 def test_months_range_accepted_on_the_first_attempt(answers):
     answers("4-6")
-    assert console_input.get_months_range(3) == [4, 5, 6]
+    assert console_input._get_months_range(3) == [4, 5, 6]
 
 
 def test_months_range_accepted_after_bad_attempts(answers):
     """An empty answer and a bad format are both retried."""
     remaining = answers("", "13", "all")
-    assert console_input.get_months_range(3) == ALL_TWELVE
+    assert console_input._get_months_range(3) == ALL_TWELVE
     assert remaining == []
 
 
 def test_months_range_attempts_run_out(answers):
     answers("nonsense", "still nonsense")
     with pytest.raises(FatalError, match="Maximum number of attempts"):
-        console_input.get_months_range(2)
+        console_input._get_months_range(2)
 
 
 @pytest.mark.parametrize("max_attempts", [0, -1])
 def test_months_range_rejects_a_non_positive_attempt_count(max_attempts):
     with pytest.raises(ValueError, match="at least 1"):
-        console_input.get_months_range(max_attempts)
+        console_input._get_months_range(max_attempts)
 
 
 # --- supply_input -----------------------------------------------------------
